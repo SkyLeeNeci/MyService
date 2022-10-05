@@ -7,6 +7,7 @@ import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
 import android.media.MediaPlayer
+import android.os.Binder
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
@@ -18,35 +19,42 @@ import java.util.*
 
 class MainActivityService : Service() {
 
+    private val binder = MainActivityServiceBinder()
+
     private var mediaPlayer: MediaPlayer? = null
     private var timer: Timer = Timer()
 
-    override fun onBind(p0: Intent?): IBinder? = null
+    override fun onBind(p0: Intent?): IBinder = binder
 
     override fun onCreate() {
         Log.d(TAG, "onCreate")
-        showNotification()
-        startMediaPlayer()
+        mediaPlayer = MediaPlayer.create(this, R.raw.test)
         super.onCreate()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "onStartCommand")
-        return super.onStartCommand(intent, flags, startId)
+        return START_STICKY
     }
 
     override fun onDestroy() {
         Log.d(TAG, "onDestroy")
-        stopMediaPlayer()
         super.onDestroy()
     }
 
-    private fun startMediaPlayer() {
-        Thread {
-            mediaPlayer = MediaPlayer.create(this, R.raw.test)
+    fun setMediaPlayerSeekTo(int: Int) {
+        mediaPlayer?.seekTo(int)
+    }
+
+    fun startMediaPlayer() {
+        if (mediaPlayer?.isPlaying == true) {
+            mediaPlayer?.pause()
+            //stopForeground(false)
+        } else {
+            showNotification()
             mediaPlayer?.start()
             setUpTimer()
-        }.start()
+        }
     }
 
     private fun setUpTimer() {
@@ -57,18 +65,23 @@ class MainActivityService : Service() {
                     val position = mediaPlayer?.currentPosition
                     Log.d(TAG, " Position : $position    Duration: $duration")
                     LocalBroadcastManager.getInstance(this@MainActivityService).sendBroadcast(
-                        Intent("getMediaPlayerTime").putExtra("TimerResult", position)
+                        Intent("getMediaPlayerTime")
+                            .putExtra(TIMER_RESULT, position)
+                            .putExtra(SEEK_BAR_MAX_VALUE, duration)
+                            .putExtra(SEEK_BAR_PROGRESS, position)
                     )
                 } else {
+                    pauseMediaPlayer()
                     Log.d(TAG, "ERROR")
+
                 }
             }
         }, 0, 1000)
 
     }
 
-    private fun stopMediaPlayer() {
-        mediaPlayer?.stop()
+    private fun pauseMediaPlayer() {
+        mediaPlayer?.pause()
         timer.cancel()
         timer = Timer()
     }
@@ -94,10 +107,17 @@ class MainActivityService : Service() {
         startForeground(NOTIFICATION_ID, notification)
     }
 
+    inner class MainActivityServiceBinder : Binder() {
+        fun getService(): MainActivityService = this@MainActivityService
+    }
+
     companion object {
         private const val TAG = "MainServiceTAG"
         private const val CHANNEL_ID = "123"
         private const val NOTIFICATION_ID = 123
+        const val TIMER_RESULT = "TimerResult"
+        const val SEEK_BAR_MAX_VALUE = "SeekBarMaxValue"
+        const val SEEK_BAR_PROGRESS = "SeekBarProgress"
     }
 
 }

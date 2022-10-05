@@ -1,21 +1,23 @@
 package test.karpenko.myservice
 
-import android.app.ActivityManager
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
+import android.content.*
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.IBinder
 import android.util.Log
+import android.widget.SeekBar
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import test.karpenko.myservice.databinding.ActivityMainBinding
 import test.karpenko.myservice.services.MainActivityService
-import kotlin.time.Duration.Companion.seconds
+import test.karpenko.myservice.services.MainActivityService.Companion.SEEK_BAR_MAX_VALUE
+import test.karpenko.myservice.services.MainActivityService.Companion.SEEK_BAR_PROGRESS
+import test.karpenko.myservice.services.MainActivityService.Companion.TIMER_RESULT
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
+    var customService: MainActivityService? = null
+    private var mBound: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -23,33 +25,42 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         binding.startPlayer.setOnClickListener {
-            if (this.isMyServiceRunning(MainActivityService::class.java)){
-                Intent(this, MainActivityService::class.java).also {
-                    stopService(it)
-                }
-            }else{
-                Intent(this, MainActivityService::class.java).also {
-                    startService(it)
-                }
+            if (mBound){
+                customService?.startMediaPlayer()
             }
         }
 
+        binding.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(p0: SeekBar?, p1: Int, p2: Boolean) {
+                if (p2) {
+                    customService?.setMediaPlayerSeekTo(p1)
+                }
+            }
+
+            override fun onStartTrackingTouch(p0: SeekBar?) {
+
+            }
+
+            override fun onStopTrackingTouch(p0: SeekBar?) {
+
+            }
+
+        })
+
     }
 
-    private fun Context.isMyServiceRunning(serviceClass: Class<*>): Boolean {
-        val manager = this.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        return manager.getRunningServices(Integer.MAX_VALUE)
-            .any { it.service.className == serviceClass.name }
-    }
-
-    private val receiver = object : BroadcastReceiver(){
+    private val receiver = object : BroadcastReceiver() {
         override fun onReceive(p0: Context?, p1: Intent?) {
-                val time = p1?.getIntExtra("TimerResult", 0)
-                binding.progress.text = time?.let { getTimeStringFromInt(it) }
-                Log.d("MainServiceTAG", time.toString())
-
+            p1?.let { intent ->
+                val time = intent.getIntExtra(TIMER_RESULT, 0)
+                val seekBarMaxValue = intent.getIntExtra(SEEK_BAR_MAX_VALUE, 0)
+                val seekBarProgress = intent.getIntExtra(SEEK_BAR_PROGRESS, 0)
+                binding.progress.text = getTimeStringFromInt(time)
+                binding.seekBar.max = seekBarMaxValue
+                binding.seekBar.progress = seekBarProgress
+                Log.d(TAG, time.toString())
+            }
         }
-
     }
 
     private fun getTimeStringFromInt(time: Int): String {
@@ -61,18 +72,56 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun makeTimeString(hours: Int, minutes: Int, seconds: Int): String {
-        return String.format("%02d:%02d:%02d", hours,minutes, seconds)
+        return String.format("%02d:%02d:%02d", hours, minutes, seconds)
     }
 
-    override fun onResume() {
-        super.onResume()
+
+    private val serviceConnection = object : ServiceConnection {
+        override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
+            customService = (p1 as MainActivityService.MainActivityServiceBinder).getService()
+            mBound = true
+        }
+
+        override fun onServiceDisconnected(p0: ComponentName?) {
+            customService = null
+            mBound = false
+        }
+
+    }
+
+    override fun onStart() {
+        super.onStart()
+        Intent(this, MainActivityService::class.java).also {
+            startService(it)
+            bindService(it, serviceConnection, Context.BIND_AUTO_CREATE)
+        }
         IntentFilter("getMediaPlayerTime").also {
             LocalBroadcastManager.getInstance(this).registerReceiver(receiver, it)
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(receiver)
+        unbindService(serviceConnection)
+        customService = null
+        mBound = false
+    }
+
     override fun onDestroy() {
         super.onDestroy()
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(receiver)
+        /*LocalBroadcastManager.getInstance(this).unregisterReceiver(receiver)
+        unbindService(serviceConnection)
+        customService = null
+        mBound = false*/
+    }
+
+
+    companion object{
+        private const val TAG = "MainActivity"
     }
 }
