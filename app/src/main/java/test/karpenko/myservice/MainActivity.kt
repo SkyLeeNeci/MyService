@@ -12,6 +12,7 @@ import test.karpenko.myservice.services.MainActivityService
 import test.karpenko.myservice.services.MainActivityService.Companion.SEEK_BAR_MAX_VALUE
 import test.karpenko.myservice.services.MainActivityService.Companion.SEEK_BAR_PROGRESS
 import test.karpenko.myservice.services.MainActivityService.Companion.TIMER_RESULT
+import test.karpenko.myservice.services.MainActivityService.Companion.MEDIA_PLAYER_TIME_ACTION
 
 class MainActivity : AppCompatActivity() {
 
@@ -25,7 +26,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         binding.startPlayer.setOnClickListener {
-            if (mBound){
+            if (mBound) {
                 customService?.startMediaPlayer()
             }
         }
@@ -95,13 +96,13 @@ class MainActivity : AppCompatActivity() {
             startService(it)
             bindService(it, serviceConnection, Context.BIND_AUTO_CREATE)
         }
-        IntentFilter("getMediaPlayerTime").also {
-            LocalBroadcastManager.getInstance(this).registerReceiver(receiver, it)
-        }
     }
 
     override fun onResume() {
         super.onResume()
+        IntentFilter(MEDIA_PLAYER_TIME_ACTION).also {
+            LocalBroadcastManager.getInstance(this).registerReceiver(receiver, it)
+        }
     }
 
     override fun onStop() {
@@ -112,16 +113,7 @@ class MainActivity : AppCompatActivity() {
         mBound = false
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        /*LocalBroadcastManager.getInstance(this).unregisterReceiver(receiver)
-        unbindService(serviceConnection)
-        customService = null
-        mBound = false*/
-    }
-
-
-    companion object{
+    companion object {
         private const val TAG = "MainActivity"
     }
 }

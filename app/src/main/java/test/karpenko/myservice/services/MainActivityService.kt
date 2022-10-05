@@ -1,7 +1,6 @@
 package test.karpenko.myservice.services
 
 import android.annotation.SuppressLint
-import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
@@ -28,11 +27,7 @@ class MainActivityService : Service() {
 
     override fun onCreate() {
         Log.d(TAG, "onCreate")
-        mediaPlayer = MediaPlayer.create(this, R.raw.test)
-        LocalBroadcastManager.getInstance(this@MainActivityService).sendBroadcast(
-            Intent("getMediaPlayerTime")
-                .putExtra(SEEK_BAR_MAX_VALUE, mediaPlayer?.duration)
-        )
+        initPlayerAndReceiveDuration()
         super.onCreate()
     }
 
@@ -61,6 +56,14 @@ class MainActivityService : Service() {
         }
     }
 
+    private fun initPlayerAndReceiveDuration() {
+        mediaPlayer = MediaPlayer.create(this, R.raw.test)
+        LocalBroadcastManager.getInstance(this@MainActivityService).sendBroadcast(
+            Intent(MEDIA_PLAYER_TIME_ACTION)
+                .putExtra(SEEK_BAR_MAX_VALUE, mediaPlayer?.duration)
+        )
+    }
+
     private fun setUpTimer() {
         timer.scheduleAtFixedRate(object : TimerTask() {
             override fun run() {
@@ -69,7 +72,7 @@ class MainActivityService : Service() {
                     val position = mediaPlayer?.currentPosition
                     Log.d(TAG, " Position : $position    Duration: $duration")
                     LocalBroadcastManager.getInstance(this@MainActivityService).sendBroadcast(
-                        Intent("getMediaPlayerTime")
+                        Intent(MEDIA_PLAYER_TIME_ACTION)
                             .putExtra(TIMER_RESULT, position)
                             .putExtra(SEEK_BAR_MAX_VALUE, duration)
                             .putExtra(SEEK_BAR_PROGRESS, position)
@@ -94,7 +97,7 @@ class MainActivityService : Service() {
     @SuppressLint("ObsoleteSdkInt")
     private fun showNotification() {
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Title")
+            .setContentTitle(getString(R.string.ешеду))
             .setContentText("Content Text")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .build()
@@ -103,7 +106,7 @@ class MainActivityService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID, "Channel if version > O",
-                NotificationManager.IMPORTANCE_DEFAULT
+                NotificationManager.IMPORTANCE_NONE
             )
             notificationManager.createNotificationChannel(channel)
         }
@@ -122,6 +125,7 @@ class MainActivityService : Service() {
         const val TIMER_RESULT = "TimerResult"
         const val SEEK_BAR_MAX_VALUE = "SeekBarMaxValue"
         const val SEEK_BAR_PROGRESS = "SeekBarProgress"
+        const val MEDIA_PLAYER_TIME_ACTION = "getMediaPlayerTime"
     }
 
 }
