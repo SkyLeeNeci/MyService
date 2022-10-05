@@ -29,6 +29,10 @@ class MainActivityService : Service() {
     override fun onCreate() {
         Log.d(TAG, "onCreate")
         mediaPlayer = MediaPlayer.create(this, R.raw.test)
+        LocalBroadcastManager.getInstance(this@MainActivityService).sendBroadcast(
+            Intent("getMediaPlayerTime")
+                .putExtra(SEEK_BAR_MAX_VALUE, mediaPlayer?.duration)
+        )
         super.onCreate()
     }
 
