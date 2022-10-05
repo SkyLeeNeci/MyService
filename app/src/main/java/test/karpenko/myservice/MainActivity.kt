@@ -4,14 +4,11 @@ import android.content.*
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.IBinder
-import android.util.Log
 import android.widget.SeekBar
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import test.karpenko.myservice.databinding.ActivityMainBinding
+import test.karpenko.myservice.receivers.MediaPlayerBroadcastReceiver
 import test.karpenko.myservice.services.MainActivityService
-import test.karpenko.myservice.services.MainActivityService.Companion.SEEK_BAR_MAX_VALUE
-import test.karpenko.myservice.services.MainActivityService.Companion.SEEK_BAR_PROGRESS
-import test.karpenko.myservice.services.MainActivityService.Companion.TIMER_RESULT
 import test.karpenko.myservice.services.MainActivityService.Companion.MEDIA_PLAYER_TIME_ACTION
 
 class MainActivity : AppCompatActivity() {
@@ -19,11 +16,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     var customService: MainActivityService? = null
     private var mBound: Boolean = false
+    private lateinit var mediaReceiver: MediaPlayerBroadcastReceiver
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        observeLiveData()
 
         binding.startPlayer.setOnClickListener {
             if (mBound) {
@@ -50,7 +50,7 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    private val receiver = object : BroadcastReceiver() {
+    /*private val receiver = object : BroadcastReceiver() {
         override fun onReceive(p0: Context?, p1: Intent?) {
             p1?.let { intent ->
                 val time = intent.getIntExtra(TIMER_RESULT, 0)
@@ -62,9 +62,9 @@ class MainActivity : AppCompatActivity() {
                 Log.d(TAG, time.toString())
             }
         }
-    }
+    }*/
 
-    private fun getTimeStringFromInt(time: Int): String {
+    /*private fun getTimeStringFromInt(time: Int): String {
         val seconds = time / 1000
         val minutes = seconds / 60
         val hours = minutes / 3600
@@ -74,8 +74,21 @@ class MainActivity : AppCompatActivity() {
 
     private fun makeTimeString(hours: Int, minutes: Int, seconds: Int): String {
         return String.format("%02d:%02d:%02d", hours, minutes, seconds)
-    }
+    }*/
 
+
+    private fun observeLiveData(){
+        mediaReceiver = MediaPlayerBroadcastReceiver()
+        mediaReceiver.timerLiveData.observe(this){
+            binding.progress.text = it
+        }
+        mediaReceiver.durationLiveData.observe(this){
+            binding.seekBar.max = it
+        }
+        mediaReceiver.positionLiveData.observe(this){
+            binding.seekBar.progress = it
+        }
+    }
 
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
@@ -101,13 +114,13 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         IntentFilter(MEDIA_PLAYER_TIME_ACTION).also {
-            LocalBroadcastManager.getInstance(this).registerReceiver(receiver, it)
+            LocalBroadcastManager.getInstance(this).registerReceiver(mediaReceiver, it)
         }
     }
 
     override fun onStop() {
         super.onStop()
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(receiver)
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mediaReceiver)
         unbindService(serviceConnection)
         customService = null
         mBound = false
