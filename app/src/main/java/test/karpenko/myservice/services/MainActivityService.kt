@@ -14,6 +14,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import test.karpenko.myservice.R
+import test.karpenko.myservice.utils.NotificationHelper
 import java.util.*
 
 class MainActivityService : Service() {
@@ -33,6 +34,10 @@ class MainActivityService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "onStartCommand")
+        if (intent?.action.equals(ACTION_STOP_SERVICE)){
+            stopForeground(true)
+            stopSelf()
+        }
         return START_STICKY
     }
 
@@ -50,7 +55,7 @@ class MainActivityService : Service() {
             mediaPlayer?.pause()
             //stopForeground(false)
         } else {
-            showNotification()
+            NotificationHelper(this, CHANNEL_ID, NOTIFICATION_ID, this).showNotification()
             mediaPlayer?.start()
             setUpTimer()
         }
@@ -94,7 +99,7 @@ class MainActivityService : Service() {
     }
 
 
-    @SuppressLint("ObsoleteSdkInt")
+   /* @SuppressLint("ObsoleteSdkInt")
     private fun showNotification() {
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(getString(R.string.ешеду))
@@ -112,7 +117,7 @@ class MainActivityService : Service() {
         }
 
         startForeground(NOTIFICATION_ID, notification)
-    }
+    }*/
 
     inner class MainActivityServiceBinder : Binder() {
         fun getService(): MainActivityService = this@MainActivityService
@@ -126,6 +131,7 @@ class MainActivityService : Service() {
         const val SEEK_BAR_MAX_VALUE = "SeekBarMaxValue"
         const val SEEK_BAR_PROGRESS = "SeekBarProgress"
         const val MEDIA_PLAYER_TIME_ACTION = "getMediaPlayerTime"
+        const val ACTION_STOP_SERVICE = "STOP"
     }
 
 }

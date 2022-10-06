@@ -121,9 +121,9 @@ class MainActivity : AppCompatActivity() {
     override fun onStop() {
         super.onStop()
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mediaReceiver)
-        unbindService(serviceConnection)
+        /*unbindService(serviceConnection)
         customService = null
-        mBound = false
+        mBound = false*/
     }
 
     companion object {
