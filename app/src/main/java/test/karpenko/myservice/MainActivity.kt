@@ -26,9 +26,12 @@ class MainActivity : AppCompatActivity() {
         observeLiveData()
 
         binding.startPlayer.setOnClickListener {
-            if (mBound) {
+                Intent(this, MainActivityService::class.java).also {
+                    startService(it)
+                }
+          /*  if (mBound) {
                 customService?.startMediaPlayer()
-            }
+            }*/
         }
 
         binding.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -106,7 +109,6 @@ class MainActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         Intent(this, MainActivityService::class.java).also {
-            startService(it)
             bindService(it, serviceConnection, Context.BIND_AUTO_CREATE)
         }
     }
@@ -121,9 +123,9 @@ class MainActivity : AppCompatActivity() {
     override fun onStop() {
         super.onStop()
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mediaReceiver)
-        /*unbindService(serviceConnection)
+        unbindService(serviceConnection)
         customService = null
-        mBound = false*/
+        mBound = false
     }
 
     companion object {

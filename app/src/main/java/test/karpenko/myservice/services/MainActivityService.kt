@@ -34,6 +34,7 @@ class MainActivityService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "onStartCommand")
+        startMediaPlayer()
         if (intent?.action.equals(ACTION_STOP_SERVICE)){
             stopForeground(true)
             stopSelf()
