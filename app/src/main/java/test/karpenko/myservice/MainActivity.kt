@@ -26,14 +26,10 @@ class MainActivity : AppCompatActivity() {
         observeLiveData()
 
         binding.startPlayer.setOnClickListener {
-                Intent(this, MainActivityService::class.java).also {
-                    startService(it)
-                }
-          /*  if (mBound) {
+            if (mBound) {
                 customService?.startMediaPlayer()
-            }*/
+            }
         }
-
         binding.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(p0: SeekBar?, p1: Int, p2: Boolean) {
                 if (p2) {
@@ -109,6 +105,7 @@ class MainActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         Intent(this, MainActivityService::class.java).also {
+            startService(it)
             bindService(it, serviceConnection, Context.BIND_AUTO_CREATE)
         }
     }

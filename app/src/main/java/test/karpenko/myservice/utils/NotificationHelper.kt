@@ -40,7 +40,7 @@ class NotificationHelper(
                     service,
                     0,
                     it.setAction(ACTION_STOP_SERVICE) ,
-                    PendingIntent.FLAG_IMMUTABLE
+                    PendingIntent.FLAG_CANCEL_CURRENT
                 )
             }
 

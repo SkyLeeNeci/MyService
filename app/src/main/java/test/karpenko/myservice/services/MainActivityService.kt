@@ -1,17 +1,11 @@
 package test.karpenko.myservice.services
 
-import android.annotation.SuppressLint
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
 import android.media.MediaPlayer
 import android.os.Binder
-import android.os.Build
 import android.os.IBinder
 import android.util.Log
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import test.karpenko.myservice.R
 import test.karpenko.myservice.utils.NotificationHelper
@@ -34,10 +28,8 @@ class MainActivityService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d(TAG, "onStartCommand")
-        startMediaPlayer()
-        if (intent?.action.equals(ACTION_STOP_SERVICE)){
-            stopForeground(true)
-            stopSelf()
+        if (intent?.action.equals(ACTION_STOP_SERVICE)) {
+            killService()
         }
         return START_STICKY
     }
@@ -99,26 +91,31 @@ class MainActivityService : Service() {
         timer = Timer()
     }
 
+    private fun killService(){
+        pauseMediaPlayer()
+        stopForeground(true)
+        stopSelf()
+    }
 
-   /* @SuppressLint("ObsoleteSdkInt")
-    private fun showNotification() {
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(getString(R.string.ешеду))
-            .setContentText("Content Text")
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .build()
-        val notificationManager = NotificationManagerCompat.from(this)
+    /* @SuppressLint("ObsoleteSdkInt")
+     private fun showNotification() {
+         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+             .setContentTitle(getString(R.string.ешеду))
+             .setContentText("Content Text")
+             .setSmallIcon(R.drawable.ic_launcher_foreground)
+             .build()
+         val notificationManager = NotificationManagerCompat.from(this)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID, "Channel if version > O",
-                NotificationManager.IMPORTANCE_NONE
-            )
-            notificationManager.createNotificationChannel(channel)
-        }
+         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+             val channel = NotificationChannel(
+                 CHANNEL_ID, "Channel if version > O",
+                 NotificationManager.IMPORTANCE_NONE
+             )
+             notificationManager.createNotificationChannel(channel)
+         }
 
-        startForeground(NOTIFICATION_ID, notification)
-    }*/
+         startForeground(NOTIFICATION_ID, notification)
+     }*/
 
     inner class MainActivityServiceBinder : Binder() {
         fun getService(): MainActivityService = this@MainActivityService
